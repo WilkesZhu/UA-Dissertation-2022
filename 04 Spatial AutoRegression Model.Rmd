@@ -1,0 +1,56 @@
+---
+title: "04 Spatial Autoregression Model"
+author: "Tongqing Zhu"
+date: "2022/7/15"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r package}
+library(tidyverse)
+library(sp)
+library(rgeos)
+library(tmap)
+library(tmaptools)
+library(rgdal)
+library(spdep)
+library(spatialreg)
+```
+
+```{r}
+df_16 <- read.csv('E:/文档/Urban Analytics/Dissertation/Data/df_16.csv')
+datazone <- readOGR("E:/文档/Urban Analytics/Dissertation/Data/simd2020_withgeog", "DataZone")
+```
+```{r}
+Model16 <- merge(datazone, df_16, by.x="DataZone", by.y="Data_Zone", all.x = FALSE, all.y = TRUE)
+```
+
+```{r}
+tm_shape(Model16) + tm_fill("PCA")  
+```
+
+```{r}
+sf_use_s2(FALSE)
+neighbours <- poly2nb(Model16,queen = FALSE)
+neighbours
+```
+```{r}
+plot(Model16, border = 'lightgrey')
+plot(neighbours, coordinates(Model16), add=TRUE, col='red')
+```
+```{r}
+listw_neighbours <- nb2listw(neighbours)
+listw_neighbours
+```
+
+```{r}
+# global spatial autocorrelation
+moran.test(Model16$PCA, listw)
+```
+```{r}
+result <- spautolm(PCA~Mean.age + non_White_rate + drive_petrol + drive_GP + drive_PO + drive_primary + drive_retail + drive_secondary,listw = listw_neighbours,data = Model16)
+summary(result)
+```
